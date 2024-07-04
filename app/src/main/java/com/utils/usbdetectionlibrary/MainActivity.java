@@ -30,7 +30,6 @@ public class MainActivity extends AppCompatActivity {
     private UsbManager usbManager;
     private PendingIntent permissionIntent;
     private UsbDeviceConnection connection;
-    private UsbEndpoint endpoint;
     private UsbDevice device;
     private int vendorId;
     private int productId;
