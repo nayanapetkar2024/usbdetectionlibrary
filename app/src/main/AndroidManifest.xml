@@ -28,6 +28,7 @@
             <intent-filter>
                 <action android:name="com.example.USB_PERMISSION" />
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
             </intent-filter>
 
             <meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"

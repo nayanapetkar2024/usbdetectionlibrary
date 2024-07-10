@@ -10,11 +10,11 @@ import android.content.IntentFilter;
 import android.content.res.XmlResourceParser;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
-import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
-
 
     private static final String ACTION_USB_PERMISSION = "com.example.USB_PERMISSION";
     private UsbManager usbManager;
@@ -38,9 +37,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+
+        if (usbManager == null) {
+            Toast.makeText(this, "UsbManager is null", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         parseDeviceFilter();
         initialiseUSB();
-
     }
 
     private void initialiseUSB(){
@@ -60,15 +66,20 @@ public class MainActivity extends AppCompatActivity {
         }
         checkConnectedDevices();
     }
-    private void checkConnectedDevices() {
-        HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
 
-        for (UsbDevice d : deviceList.values()) {
-            if (isGryphonScanner(d)) {
-                usbManager.requestPermission(device, permissionIntent);
-                device = d;
-                break;
+    private void checkConnectedDevices() {
+        if (usbManager != null) {
+            HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+
+            for (UsbDevice d : deviceList.values()) {
+                if (isGryphonScanner(d)) {
+                    usbManager.requestPermission(d, permissionIntent);
+                    device = d;
+                    break;
+                }
             }
+        } else {
+            Toast.makeText(this, "UsbManager is null", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -109,14 +120,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupDeviceCommunication(UsbDevice device) {
         UsbInterface intf = device.getInterface(0);
-        endpoint = intf.getEndpoint(0); // Assuming the first endpoint
 
         connection = usbManager.openDevice(device);
         if (connection == null || !connection.claimInterface(intf, true)) {
             Toast.makeText(this, "Failed to open device", Toast.LENGTH_SHORT).show();
             return;
         }
-
     }
 
     private void parseDeviceFilter() {
@@ -127,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
                 if (eventType == XmlPullParser.START_TAG && parser.getName().equals("usb-device")) {
                     vendorId = Integer.parseInt(parser.getAttributeValue(null, "vendor-id"));
                     productId = Integer.parseInt(parser.getAttributeValue(null, "product-id"));
+                    Log.d("USBManager", "Parsed vendorId: " + vendorId + ", productId: " + productId);
                 }
                 eventType = parser.next();
             }
@@ -142,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         try {
             unregisterReceiver(usbReceiver);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
